@@ -1,15 +1,7 @@
-from socket import * #for socket programming
-import threading #for multithreading for multiple clients
-import sys #for exit calls and input calls
-import time #for sleep
-import signal #for silent quit
+import packet
+import socket
+import sys
+import time
+import udt
 
-"""
-
-"""
-
-def sender():
-    pass
-
-def receiver():
-    pass
+from timer import Timer
