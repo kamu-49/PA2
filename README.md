@@ -4,10 +4,10 @@
 ### Notes
 * sender/receiver in UDP protocol
 * implementation of GBN on top of UDP on both sender and receiver
-* >guarantee packets be sent in correct order to higher layers<
+* guarantee packets be sent in correct order to higher layers****
 * unreliable channel emulation:
     * sender/receiver drops incoming packet/ACK w/ prob
-* [python3 gobackn.py <self-port> <peer-port> <window-size> [-d <value-of-d> | -p <value-of-p>]]
+* [python3 gobackn.py self-port peer-port window-size [-d value-of-d | -p value-of-p]]
 * argv[0] = file name
 * argv[1] = sender port
 * argv[2] = receiver port
@@ -29,7 +29,7 @@
     * moves along sending buff
     * window should wrap if implemented as array
     * packets in window = sent out immediately
-    * >window size = passed as argument<
+    * window size = passed as argument****
 * timer
     * starts after first packet sent out, stops when ACK received
     * timer restarts when window moves
