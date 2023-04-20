@@ -1,6 +1,14 @@
 # PA2: CSEE W4119 Computer Networks Programming Assignment 2 - Network Protocols Emulation
 
 ## PART1: GBN
+### Ideas
+- create a function that checks if a timer has already been set
+    - use it in both the sender and receiver function
+    - should have a function that turns off the timer whenever a packet is received.
+    - starts again when realizes there are still packets waiting to be received
+        - keep in mind of the scenario where the first "next"packet is sent but there are still packets awaiting a receive. the timer still restarts with these packets as well once the ACK is received.
+            - can have the timer "restart" when the buffer is recognized as not empty. once the buffer is empty the clock is completely wiped.
+    - once the timeout happens, the packets in the window are resent. buffer is cleared and the window packets are put back into the buffer
 ### Notes
 * sender/receiver in UDP protocol
 * implementation of GBN on top of UDP on both sender and receiver

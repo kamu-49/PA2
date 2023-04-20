@@ -39,6 +39,14 @@ def sender(self_port, peer_port, window_size, type, value):
 
     #buffer init
     buffer = [data_packet_size*ws]
+    buff_hold = [data_packet*ws]
+
+    while True:
+        #wait for receiver recognition
+        hold, addr = sock.recvfrom(4096)
+        print("test break\n")
+        if hold.decode() == "alive":
+            break
 
     #message init
     msg = input("sender> ")
@@ -46,11 +54,15 @@ def sender(self_port, peer_port, window_size, type, value):
     while(msg.split()[0] != "send"):
         msg = input("incorrect pharasing. supposed to be 'send (insert text here)'. try again please\nsender> ")
     letter_list = [char for char in msg]
-    
+
     #im not sure
     while True:
         while wsc < ws:
-            
+            buffer, wsc = snd()
+            if wsc == ws:
+                break
+        
+
 
 
 
@@ -61,10 +73,29 @@ def sender(self_port, peer_port, window_size, type, value):
 RECEIVER
 """
 def receiver(self_port, peer_port, window_size, type, value):
+    #declarations
     sport = peer_port
     rport = self_port
+    saddr = ('', sport)
+    raddr = ('', rport)
     ws = window_size
-    pass
+    wsl = 0
+    
+    #socket init
+    sock = socket(AF_INET, SOCK_DGRAM)
+    sock.bind(raddr)
+
+    #buffer init
+    buffer = [data_packet_size*ws]
+    buff_hold = [data_packet*ws]
+
+    #receiver is alive
+    hi = "alive"
+    sock.sendto(hi.encode(), saddr)
+
+    #im not sure
+    while True:
+
 
 
 
@@ -72,7 +103,13 @@ def receiver(self_port, peer_port, window_size, type, value):
 """
 SENDING
 """
-def send():
+def snd_r():
+    pass
+
+
+
+
+def snd_s():
     pass
 
 
@@ -81,7 +118,13 @@ def send():
 """
 RECEIVING
 """
-def recv():
+def recv_r():
+    pass
+
+
+
+
+def recv_s():
     pass
 
 
