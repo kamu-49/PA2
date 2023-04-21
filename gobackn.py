@@ -53,13 +53,21 @@ def sender(self_port, peer_port, window_size, type, value):
     #testing correct user input
     while(msg.split()[0] != "send"):
         msg = input("incorrect pharasing. supposed to be 'send (insert text here)'. try again please\nsender> ")
-    letter_list = [char for char in msg]
+    reduced_msg = msg[5:]
+    letter_list = [char for char in reduced_msg]
 
     #im not sure
     while True:
-        while wsc < ws:
-            buffer, wsc = snd()
-            if wsc == ws:
+        while holder < len(letter_list):            # if we haven't reached the end yet
+            while wsc < ws:                         # if we haven't filled the window yet
+                buffer, wsc = snd_s()
+                holder += 1
+                if wsc == ws:
+                    pass
+                if holder == len(letter_list):
+                    break_flag = True
+                    break
+            if break_flag is True:
                 break
         
 
