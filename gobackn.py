@@ -56,23 +56,17 @@ def sender(self_port, peer_port, window_size, type, value):
     reduced_msg = msg[5:]
     letter_list = [char for char in reduced_msg]
 
-    #im not sure
-    while True:
-        while holder < len(letter_list):            # if we haven't reached the end yet
-            while wsc < ws:                         # if we haven't filled the window yet
-                buffer, wsc = snd_s()
-                holder += 1
-                if wsc == ws:
-                    pass
-                if holder == len(letter_list):
-                    break_flag = True
-                    break
-            if break_flag is True:
-                break
-        
-
-
-
+    #sending window
+    while wsc < len(letter_list):            # if we haven't reached the end yet
+        true_ws = min(ws, len(letter_list)-(wsc+ws))
+        if true_ws < 0:
+            t = ws + true_ws
+            true_ws = t
+        buffer = snd_s() #needs the window size for sure and the char lsit
+        recv_s()
+        wsc+=1
+    print("Summary: this is where I will put the summary for everything")
+    sys.exit()
 
 
 
@@ -101,8 +95,10 @@ def receiver(self_port, peer_port, window_size, type, value):
     hi = "alive"
     sock.sendto(hi.encode(), saddr)
 
-    #im not sure
+    #receiving window
     while True:
+        recv_r()
+        snd_r()
 
 
 
