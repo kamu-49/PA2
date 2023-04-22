@@ -1,150 +1,72 @@
-from socket import * #for socket programming
-import threading #for multithreading for multiple clients
-import sys #for exit calls and input calls
-import time #for sleep
-import signal #for silent quit
+from socket import *
+import sys
+import time
+import signal
 import random
 
-"""
-DECLARATIONS
-"""
+
+########## DECLARATIONS ##########
 byte = 8
 letter = [byte]
-sequence_number = [16]
+sequence_number = [32]
 data_packet = [letter + len(sequence_number)]
 data_packet_size = len(data_packet)
-time_limit = 0.5
-# probability = 0.15
-# determine = random.randint(3,7)
+timeout = 0.5
 holder = 0
 
 
-
-
-"""
-SENDER
-"""
-def sender(self_port, peer_port, window_size, type, value):
-    #declarations
+######### SENDER ##########
+def sender(self_port, peer_port, window_size, timeout_type, timeout_value):
     sport = self_port
     rport = peer_port
     ws = window_size
-    saddr = ('', sport)
-    raddr = ('', rport)
-    wsc = 0 #window size counter
-
-    #socket init
-    sock = socket(AF_INET, SOCK_DGRAM)
-    socket.bind(saddr)
-
-    #buffer init
-    buffer = [data_packet_size*ws]
-    buff_hold = [data_packet*ws]
-
-    while True:
-        #wait for receiver recognition
-        hold, addr = sock.recvfrom(4096)
-        print("test break\n")
-        if hold.decode() == "alive":
-            break
-
-    #message init
-    msg = input("sender> ")
-    #testing correct user input
-    while(msg.split()[0] != "send"):
-        msg = input("incorrect pharasing. supposed to be 'send (insert text here)'. try again please\nsender> ")
-    reduced_msg = msg[5:]
-    letter_list = [char for char in reduced_msg]
-
-    #sending window
-    while wsc < len(letter_list):            # if we haven't reached the end yet
-        true_ws = min(ws, len(letter_list)-(wsc+ws))
-        if true_ws < 0:
-            t = ws + true_ws
-            true_ws = t
-        buffer = snd_s() #needs the window size for sure and the char lsit
-        recv_s()
-        wsc+=1
-    print("Summary: this is where I will put the summary for everything")
-    sys.exit()
+    type = timeout_type
+    val = timeout_value
 
 
-
-
-"""
-RECEIVER
-"""
-def receiver(self_port, peer_port, window_size, type, value):
-    #declarations
-    sport = peer_port
+######### RECEIVER ##########
+def receiver(self_port, peer_port, window_size, timeout_type, timeout_value):
     rport = self_port
-    saddr = ('', sport)
-    raddr = ('', rport)
+    sport = peer_port
     ws = window_size
-    wsl = 0
-    
-    #socket init
-    sock = socket(AF_INET, SOCK_DGRAM)
-    sock.bind(raddr)
-
-    #buffer init
-    buffer = [data_packet_size*ws]
-    buff_hold = [data_packet*ws]
-
-    #receiver is alive
-    hi = "alive"
-    sock.sendto(hi.encode(), saddr)
-
-    #receiving window
-    while True:
-        recv_r()
-        snd_r()
+    type = timeout_type
+    val = timeout_value
 
 
-
-
-
-"""
-SENDING
-"""
+######### SENDING #########
 def snd_r():
     pass
-
-
-
 
 def snd_s():
     pass
 
 
-
-
-"""
-RECEIVING
-"""
+######### RECEIVING #########
 def recv_r():
     pass
-
-
-
 
 def recv_s():
     pass
 
 
+########## BINARY/SYMBOL FUNCTIONS ##########
+def bts(bin):
+    return int(bin, 2)
+
+def stb(st, isData):
+    st = ord(st)
+    if isData:
+        binary = bin(st)[2:].zfill(8)
+    else:
+        binary = bin(st)[2:].zfill(32)
+    return binary
 
 
-"""
-BINARY TO SYMBOL
-"""
-def bts():
-    pass
-
-
-
-
-"""
-SYMBOL TO BINARY
-"""
-def stb():
-    pass
+######### PACKET CREATION & EXTRACTION FUNCTIONS ##########
+def make(seq, data):
+    d = stb(data, True)
+    s = stb(seq, False)
+    ret = []
+    ret.append(s)
+    ret.append(d)
+    return ret
