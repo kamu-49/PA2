@@ -15,14 +15,19 @@ holder = 0
 
 
 ##### SENDER #####
-def sender(sp, pp, ws, tt, tv):
+def sender(self_port, peer_port, window_size, timeout_type, timeout_value):
     print("hello. inside sender")
     ### Declarations
+    sp = self_port
+    rp = peer_port
+    ws = window_size
+    tt = timeout_type
+    tv = timeout_value
     seq_index = 0
 
     ### sock init
-    sa = ('localhost',sp)
-    ra = ('localhost', pp)
+    sa = ('',sp)
+    ra = ('', rp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(sa)
     buffer = [data_packet_size*ws]
@@ -30,26 +35,30 @@ def sender(sp, pp, ws, tt, tv):
     ## test 1 ##
     print("current address: ", sa)
     print("test1")
-    while True:
-        hold, addr = sock.recvfrom(1024)
-        h = hold.decode()
-        print(h)
-        break
+    hold, addr = sock.recvfrom(1024)
+    h = hold.decode()
+    print(h)
 
     print("shutting down sender")
     time.sleep(5)
     ## test 1 ##
 
-def receiver(rp, pp, ws, tt, tv):
+def receiver(self_port, peer_port, window_size, timeout_type, timeout_value):
     print("hello. in receiver")
+    rp = self_port
+    sp = peer_port
+    ws = window_size
+    tt = timeout_type
+    tv = timeout_value
     seq_index = 0
 
     ### sock init
-    sa = ('localhost',pp)
-    ra = ('localhost', rp)
+    sa = ('',sp)
+    ra = ('', rp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(ra)
     buffer = [data_packet_size*ws]
+    ma = ('', (int((sp+rp)/2)))
 
     ## test 1 ##
     print("sending to: ", sa)
@@ -71,7 +80,7 @@ if __name__ == "__main__":
     time.sleep(0.5)
     try:
         print("attempting bind...")
-        s.bind(('localhost',mp))
+        s.bind(('',mp))
         print("no sender yet")
         sender(sp,pp,ws,pt,pn)
     except OSError as e:

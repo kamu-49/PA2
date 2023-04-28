@@ -21,8 +21,8 @@ def sender(sp, pp, ws, tt, tv):
     seq_index = 0
 
     ### sock init
-    sa = ('localhost',sp)
-    ra = ('localhost', pp)
+    sa = ('',sp)
+    ra = ('', pp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(sa)
     buffer = [data_packet_size*ws]
@@ -45,8 +45,8 @@ def receiver(rp, pp, ws, tt, tv):
     seq_index = 0
 
     ### sock init
-    sa = ('localhost',pp)
-    ra = ('localhost', rp)
+    sa = ('',pp)
+    ra = ('', rp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(ra)
     buffer = [data_packet_size*ws]
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     time.sleep(0.5)
     try:
         print("attempting bind...")
-        s.bind(('localhost',mp))
+        s.bind(('',mp))
         print("no sender yet")
         sender(sp,pp,ws,pt,pn)
     except OSError as e:
