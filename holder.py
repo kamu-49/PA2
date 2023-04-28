@@ -6,135 +6,146 @@ import signal #for silent quit
 import random
 
 """
-python3 gobackn.py <self-port> <peer-port> <window-size> [-d <d-value> | -p <p-value>]
-"""
-
-"""
 DECLARATIONS
-everything is in bits. stuff will be converted fro bytes to bits
-
-1 byte = 8 bits.
-buffer length = data packet * windowsize
-data packet = data + seq number
-seq number = 16 bits
 """
 byte = 8
 letter = [byte]
-seq_num = [16]
-data_packet = [letter+16] #in bits, first half is seq #, second half is data packet
-dps = 24 #data packet size
-#buffer length will be packetsize * windowsize = 16*n (in bits)
-t_lim = 0.5
-prob = 0.15
-det = 5
+sequence_number = [16]
+data_packet = [letter + len(sequence_number)]
+data_packet_size = len(data_packet)
+time_limit = 0.5
+# probability = 0.15
+# determine = random.randint(3,7)
 holder = 0
+
+
+
 
 """
 SENDER
 """
-    
-def sender(sport, rport, ws, type, val):
-    #address creation
-    saddr = ('localhost', sport)
-    raddr = ('localhost', rport)
+def sender(self_port, peer_port, window_size, type, value):
+    #declarations
+    sport = self_port
+    rport = peer_port
+    ws = window_size
+    saddr = ('', sport)
+    raddr = ('', rport)
+    seq_index = 0 #window size counter
 
-    #create sock
-    sock = socket(AF_INET,SOCK_DGRAM)
-    sock.bind(saddr)
+    #socket init
+    sock = socket(AF_INET, SOCK_DGRAM)
+    socket.bind(saddr)
 
-    #creation and validation of buffer. old version
-    """
-    buff_len = (len(data_packet)*ws)
-    msg, addr = sock.recvfrom()
-    msg = msg.decode()
-    print("addr test: ", addr, "\n", raddr) #test
+    #buffer init
+    buffer = [data_packet_size*ws]
+    buff_hold = [data_packet*ws]
 
-    #if the buffers are not the
-    if int(msg) != int(buff_len):
-        bad = "no"
-        sock.sendto(bad.encode(), raddr)
-        time.sleep(1)
-        sys.exit("receiver and sender window size are not the same (assuming need them to be the same size).")
-    """
+    while True:
+        #wait for receiver recognition
+        hold, addr = sock.recvfrom(4096)
+        print("test break\n")
+        if hold.decode() == "alive":
+            break
 
-    #creation of buffer
-    bs = len(data_packet)*ws #one-time usage
-    buffer = [bs]
-
-    #creating send window
+    #message init
     msg = input("sender> ")
-    splitup = msg.split()
-    newsplit = msg.split(' ',1)[1]
-    listsplit = list(newsplit)
-    if splitup[0] != "send":
-        msg = input("incorrect input. Must do 'send' then message. \nsender> ")
+    #testing correct user input
+    while(msg.split()[0] != "send"):
+        msg = input("incorrect pharasing. supposed to be 'send (insert text here)'. try again please\nsender> ")
+    reduced_msg = msg[5:]
+    letter_list = [char for char in reduced_msg]
 
-    #opening messaging window
-    for x in range(len(listsplit)):
-        print(x)
+    #sending window, curtain method, perfect world
+    while seq_index < len(letter_list):            # if we haven't reached the end yet
+        true_ws = min(ws, len(letter_list)-seq_index)
+        buffer = snd_s(buffer, true_ws, seq_index, letter_list) #needs the window size for sure and the char lsit. FOR LOOP
+        seq_index, buffer = recv_s(buffer)
+    print("Summary: this is where I will put the summary for everything")
+    sys.exit()
+
+
+
+
 """
 RECEIVER
 """
-
-def receiver(rport, sport, ws, type, val):
-    saddr = ('localhost', sport)
-    raddr = ('localhost', rport)
-    #create sock
+def receiver(self_port, peer_port, window_size, type, value):
+    #declarations
+    sport = peer_port
+    rport = self_port
+    saddr = ('', sport)
+    raddr = ('', rport)
+    ws = window_size
+    wsl = 0
+    
+    #socket init
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(raddr)
 
-    #creation and validation of buffer. receive does not have a buffer
-    """
-    buff_size = (len(data_packet)*ws)
-    sock.sendto(buff_size.encode(), saddr)
-    msg, addr = sock.recvfrom(4096)
-    print("addr test: ", addr, "\n", raddr)
-    msg = msg.decode()
-    if msg == "no":
-        time.sleep(1)
-        sys.exit("receiver and sender window size are not the same (assuming need them to be the same size).")
-    """
+    #buffer init
+    buffer = [data_packet_size*ws]
+    buff_hold = [data_packet*ws]
 
-    #sending creation of the receiver
+    #receiver is alive
+    hi = "alive"
+    sock.sendto(hi.encode(), saddr)
 
-     
-    #opening messaging window
+    #receiving window
     while True:
-        pass
+        recv_r()
+        snd_r()
+
+
+
+
 
 """
-BIN TO SYMB
+SENDING
 """
-
-def bts(dec): #binary to symbol
+def snd_r():
     pass
 
-"""
-SYMB TO BIN
-"""
 
-def stb(letter): #symbol to binary
+
+
+def snd_s(b, ws, ind, list):
+
+    
+
+
+
+
+"""
+RECEIVING
+"""
+def recv_r():
     pass
 
-"""
-SEND
-"""
 
-def send(sock, encoded, ip, port, fail):
-    addr = (ip, port)
-    if fail == "-d":
-        #send
-        holder += 1
-    elif fail == "-p":
-        if random.random() <= prob:
-            #send
-            pass
+
+
+def recv_s():
+    pass
+
+
+
+
+"""
+BINARY/SYMBOL FUNCTION
+"""
+def bts(bin):
+    return int(bin, 2)
+
+def stb(st, isData):
+    st = ord(st)
+    if isData:
+        binary = bin(st)[2:].zfill(8)
     else:
-        exit("error with the 'fail' thing") 
+        binary = bin(st)[2:].zfill(16)
+    return binary
 
 """
-RECEIVE
+PACKET CREATION AND EXTRACTION FUNCTIONS
 """
-
-def recv():
-    pass
+def make(seq, data)

@@ -19,18 +19,68 @@ holder = 0
 def sender(self_port, peer_port, window_size, timeout_type, timeout_value):
     sport = self_port
     rport = peer_port
+    saddr = ('',sport)
+    raddr = ('',rport)
     ws = window_size
     type = timeout_type
     val = timeout_value
+    seq_index = 0
+
+    #sock init
+    sock = socket(AF_INET, SOCK_DGRAM)
+    socket.bind(saddr)
+
+    #buffer init
+    buffer = [data_packet_size*ws]
+
+    #receiver recognition
+    while True:
+        hold, addr = sock.recvfrom(4096)
+        if hold.decode() == "alive":
+            break
+
+    #non-blocking
+    sock.setblocking(False)
+    sock.settimeout(0.5)
+
+    #message init
+    msg = input("sender> ")
+    #testing correct user input
+    while(msg.split()[0] != "send"):
+        msg = input("incorrect pharasing. supposed to be 'send (insert text here)'. try again please\nsender> ")
+    reduced_msg = msg[5:]
+    letter_list = [char for char in reduced_msg]
+
+    #sending window, curtain method; perfect world
+    while seq_index < len(letter_list):
+        pass
 
 
 ######### RECEIVER ##########
 def receiver(self_port, peer_port, window_size, timeout_type, timeout_value):
-    rport = self_port
     sport = peer_port
+    rport = self_port
+    saddr = ('', sport)
+    raddr = ('', rport)
     ws = window_size
-    type = timeout_type
-    val = timeout_value
+    wsl = 0
+
+    #socket init
+    sock = socket(AF_INET, SOCK_DGRAM)
+    sock.bind(raddr)
+
+    #buffer init
+    buffer = [data_packet_size*ws]
+
+    #alive receiver
+    hi = "alive"
+    sock.sendto(hi.encode(), saddr)
+
+    #receiving window
+    while True:
+        pass
+
+
 
 
 ######### SENDING #########
@@ -45,8 +95,19 @@ def snd_s():
 def recv_r():
     pass
 
-def recv_s():
-    pass
+def recv_s(sock):
+    try:
+        data = sock.recvfrom(1048)
+        if data:
+            buff, addr = data
+            sequence_number = bts(buff[0:31])
+            data = bts(buff[32:39])
+            if sequence_number == 0:
+                pass
+    except socket.error:
+        pass
+
+    
 
 
 ########## BINARY/SYMBOL FUNCTIONS ##########
