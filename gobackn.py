@@ -1,5 +1,5 @@
 from socket import *
-import sys
+from sys import *
 import time
 import signal
 import random
@@ -8,7 +8,7 @@ import random
 byte = 8
 letter = [byte]
 sequence_number = [32]
-data_packet = [letter + len(sequence_number)]
+data_packet = [len(letter) + len(sequence_number)]
 data_packet_size = len(data_packet)
 timeout = 0.5
 holder = 0
@@ -16,6 +16,7 @@ holder = 0
 
 ##### SENDER #####
 def sender(self_port, peer_port, window_size, timeout_type, timeout_value):
+    print("hello. inside sender")
     ### Declarations
     sp = self_port
     rp = peer_port
@@ -31,17 +32,13 @@ def sender(self_port, peer_port, window_size, timeout_type, timeout_value):
     sock.bind(sa)
     buffer = [data_packet_size*ws]
 
-    ## TEST 1 ##
-    t, a = sock.recvfrom(1024)
-    hold = t.decode()
-    print(hold)
+    ## test 1##
+    while True:
+        time.sleep(10)
+        break
 
-    tst1 = "hi. this is a socket connection test"
-    sock.sendto(tst1.encode(), ra)
-    ## TEST 1 END ##
-
-##### RECEIVER #####
 def receiver(self_port, peer_port, window_size, timeout_type, timeout_value):
+    print("hello. in receiver")
     rp = self_port
     sp = peer_port
     ws = window_size
@@ -56,11 +53,26 @@ def receiver(self_port, peer_port, window_size, timeout_type, timeout_value):
     sock.bind(ra)
     buffer = [data_packet_size*ws]
 
-    ## TEST 1 ##
-    tst1 = "hi. this si the receiver side"
-    sock.sendto(tst1.encode(), sa)
+    ## test 1 ##
+    while True:
+        time.sleep(10)
+        break
 
-    t, a = sock.recvfrom(1024)
-    hold = t.decode()
-    print(hold)
-    ## TEST 1 END ##
+if __name__ == "__main__":
+    sp = int(argv[1])
+    pp = int(argv[2])
+    ws = int(argv[3])
+    pt = argv[4]
+    pn = float(argv[5])
+
+    mp = int((sp + pp)/ 2)
+    s = socket(AF_INET, SOCK_DGRAM)
+    time.sleep(0.5)
+    try:
+        s.bind(('',pp))
+        s.close()
+        sender(sp,pp,ws,pt,pn)
+    except:
+        receiver(sp,pp,ws,pt,pn)
+        s.close()
+    
