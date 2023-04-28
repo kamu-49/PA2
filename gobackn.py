@@ -4,8 +4,7 @@ import time
 import signal
 import random
 
-
-########## DECLARATIONS ##########
+##### DECLARATIONS #####
 byte = 8
 letter = [byte]
 sequence_number = [32]
@@ -15,119 +14,53 @@ timeout = 0.5
 holder = 0
 
 
-######### SENDER ##########
+##### SENDER #####
 def sender(self_port, peer_port, window_size, timeout_type, timeout_value):
-    sport = self_port
-    rport = peer_port
-    saddr = ('',sport)
-    raddr = ('',rport)
+    ### Declarations
+    sp = self_port
+    rp = peer_port
     ws = window_size
-    type = timeout_type
-    val = timeout_value
+    tt = timeout_type
+    tv = timeout_value
     seq_index = 0
 
-    #sock init
+    ### sock init
+    sa = ('',sp)
+    ra = ('', rp)
     sock = socket(AF_INET, SOCK_DGRAM)
-    socket.bind(saddr)
-
-    #buffer init
+    sock.bind(sa)
     buffer = [data_packet_size*ws]
 
-    #receiver recognition
-    while True:
-        hold, addr = sock.recvfrom(4096)
-        if hold.decode() == "alive":
-            break
+    ## TEST 1 ##
+    t, a = sock.recvfrom(1024)
+    hold = t.decode()
+    print(hold)
 
-    #non-blocking
-    sock.setblocking(False)
-    sock.settimeout(0.5)
+    tst1 = "hi. this is a socket connection test"
+    sock.sendto(tst1.encode(), ra)
+    ## TEST 1 END ##
 
-    #message init
-    msg = input("sender> ")
-    #testing correct user input
-    while(msg.split()[0] != "send"):
-        msg = input("incorrect pharasing. supposed to be 'send (insert text here)'. try again please\nsender> ")
-    reduced_msg = msg[5:]
-    letter_list = [char for char in reduced_msg]
-
-    #sending window, curtain method; perfect world
-    while seq_index < len(letter_list):
-        pass
-
-
-######### RECEIVER ##########
+##### RECEIVER #####
 def receiver(self_port, peer_port, window_size, timeout_type, timeout_value):
-    sport = peer_port
-    rport = self_port
-    saddr = ('', sport)
-    raddr = ('', rport)
+    rp = self_port
+    sp = peer_port
     ws = window_size
-    wsl = 0
+    tt = timeout_type
+    tv = timeout_value
+    seq_index = 0
 
-    #socket init
+    ### sock init
+    sa = ('',sp)
+    ra = ('', rp)
     sock = socket(AF_INET, SOCK_DGRAM)
-    sock.bind(raddr)
-
-    #buffer init
+    sock.bind(ra)
     buffer = [data_packet_size*ws]
 
-    #alive receiver
-    hi = "alive"
-    sock.sendto(hi.encode(), saddr)
+    ## TEST 1 ##
+    tst1 = "hi. this si the receiver side"
+    sock.sendto(tst1.encode(), sa)
 
-    #receiving window
-    while True:
-        pass
-
-
-
-
-######### SENDING #########
-def snd_r():
-    pass
-
-def snd_s():
-    pass
-
-
-######### RECEIVING #########
-def recv_r():
-    pass
-
-def recv_s(sock):
-    try:
-        data = sock.recvfrom(1048)
-        if data:
-            buff, addr = data
-            sequence_number = bts(buff[0:31])
-            data = bts(buff[32:39])
-            if sequence_number == 0:
-                pass
-    except socket.error:
-        pass
-
-    
-
-
-########## BINARY/SYMBOL FUNCTIONS ##########
-def bts(bin):
-    return int(bin, 2)
-
-def stb(st, isData):
-    st = ord(st)
-    if isData:
-        binary = bin(st)[2:].zfill(8)
-    else:
-        binary = bin(st)[2:].zfill(32)
-    return binary
-
-
-######### PACKET CREATION & EXTRACTION FUNCTIONS ##########
-def make(seq, data):
-    d = stb(data, True)
-    s = stb(seq, False)
-    ret = []
-    ret.append(s)
-    ret.append(d)
-    return ret
+    t, a = sock.recvfrom(1024)
+    hold = t.decode()
+    print(hold)
+    ## TEST 1 END ##
