@@ -25,39 +25,38 @@ def sender(sp, pp, ws, tt, tv):
     ra = ('localhost', pp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(sa)
-    buffer = [None] * ws
+    buffer_len = ws
+    buffer = []
 
+    total = 0
+    dead = 0
     while True:
         hold, addr = sock.recvfrom(1024)
-        print(hold)
         h = hold.decode()
-        print(h)
-        break
-  
+        if h == "alive":
+            break
+
     msg = input("sender> ")
-    mmsg = "the message received was: " + msg
-    sock.sendto(mmsg.encode(), ra)
     test3 = []
     for i in msg:
         test3.append(i)
     t3h = 0
     while t3h < len(test3):
-        while None in buffer:
+        bi = 0
+        while len(buffer) < buffer_len:
             seq_index += 1
-            if seq_index > max_seq:
+            if seq_index > max_seq-1:
                 seq_index = 1
             m = make(seq_index, msg[i])
-            print(m)
+            buffer.append(m)
             sock.sendto(m.encode(), ra)
-            time.sleep(0.15)
+            time.sleep(0.02)
     nah = b"finito"
     sock.sendto(nah, ra)
-    ## test 4 done ##
-    print("shutting down sender...")
-    time.sleep(3)
+    print("[Summary] %d/%d packets discarded, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
+    
 
 def receiver(rp, pp, ws, tt, tv):
-    print("hello. in receiver")
     seq_index = 0
 
     ### sock init
@@ -70,45 +69,31 @@ def receiver(rp, pp, ws, tt, tv):
     ## test 1 ##
     print("sending to: ", sa)
     print("Test1")
-    hi = b"hi. receiver to sender"
+    hi = b"alive"
     sock.sendto(hi, sa)
-    ## test 1 done ##
-
-     ## test 2 ##
-    while True:
-        s, a = sock.recvfrom(1024)
-        print(s)
-        print(s.decode())
-        break
-    ## test 2 done ##
+    
+    dead = 0
+    total = 0
+    exp_pkg = 1
     while True:
         a, b = sock.recvfrom(1024)
-        if(a.decode() == "finished"):
-            print("we done here chief")
-            break
-        else:
-            print("Received: ", a.decode())
-    ## test 3 done ##
-
-    ## test 4 ##
-    while True:
-        a, b = sock.recvfrom(1024)
+        total += 1
         if(a.decode() == "finito"):
-            print("done again chief")
+            print("[Summary] %d/%d packets dropped, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
             break
         else:
-            print("received pkg: ", a.decode())
-            seq = a[0:32]
-            d_hold = a[32:40]
-            print("RARARAAAAA : ", d_hold)
-            data = d_hold
+            decoded = a.decode()
+            seq = decoded[0:32]
+            packet = decoded[32:40]
+            
             fs = bto(seq, False)
-            fd = bto(data, True)
-            print("converted to: ", fs)
-            print("as well as ", fd)
-    ## test 4 done ##
-    print("shutting down receiver...")
-    time.sleep(3)
+            fd = bto(packet, True)
+            print("packet %d %s received"%(fs-1, fd))
+            # ADD PROBABILITY HERE
+            #dead += 1
+            sock.sendto(seq.encoded(), sa)
+            print("ACK%d sent, expecting packet%d"%(fs-1,fs))
+
 
 def bto(bi, isData): #bts
     print("this is so frustrating: ", type(bi), bi)
@@ -135,7 +120,6 @@ def make(seq, data):
     s = otb(seq, False)
     ret = ""
     ret= s + d
-    print(s, d, "make ", ret)
     return ret
 
 if __name__ == "__main__":
