@@ -8,8 +8,8 @@ import random
 byte = 8
 letter = [byte]
 sequence_number = [32]
-data_packet = [len(letter) + len(sequence_number)]
-data_packet_size = len(data_packet)
+data_packet = []
+data_packet_size = len(data_packet)+len(sequence_number)
 timeout = 0.5
 holder = 0
 
@@ -25,7 +25,7 @@ def sender(sp, pp, ws, tt, tv):
     ra = ('localhost', pp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(sa)
-    buffer = [data_packet_size*ws]
+    buffer = [None] * ws
 
     ## test 1 ##
     print("current address: ", sa)
@@ -57,6 +57,18 @@ def sender(sp, pp, ws, tt, tv):
             sock.sendto(nah, ra)
             break
     ## test 3 done ##
+
+    ## test 4 ##
+    for i in range(len(msg)):
+        seq_index += 1
+        print("seq index: ", seq_index, otb(seq_index, False))
+        m = make(seq_index, msg[i])
+        print(m)
+        sock.sendto(m.encode(), ra)
+        time.sleep(0.15)
+    nah = b"finito"
+    sock.sendto(nah, ra)
+    ## test 4 done ##
     print("shutting down sender...")
     time.sleep(3)
 
@@ -69,7 +81,7 @@ def receiver(rp, pp, ws, tt, tv):
     ra = ('localhost', rp)
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind(ra)
-    buffer = [data_packet_size*ws]
+    buffer = [None] * 1
 
     ## test 1 ##
     print("sending to: ", sa)
@@ -93,8 +105,54 @@ def receiver(rp, pp, ws, tt, tv):
         else:
             print("Received: ", a.decode())
     ## test 3 done ##
+
+    ## test 4 ##
+    while True:
+        a, b = sock.recvfrom(1024)
+        if(a.decode() == "finito"):
+            print("done again chief")
+            break
+        else:
+            print("received pkg: ", a.decode())
+            seq = a[0:32]
+            d_hold = a[32:40]
+            print("RARARAAAAA : ", d_hold)
+            data = d_hold
+            fs = bto(seq, False)
+            fd = bto(data, True)
+            print("converted to: ", fs)
+            print("as well as ", fd)
+    ## test 4 done ##
     print("shutting down receiver...")
     time.sleep(3)
+
+def bto(bi, isData): #bts
+    print("this is so frustrating: ", type(bi), bi)
+    if not isData:
+        returner = int(bi, 2)
+    elif isData:
+        inp_str = int(bi, 2)
+        inp_char = inp_str.to_bytes(1, "big")
+        returner = inp_char.decode()
+    return returner
+
+def otb(st, isData): #stb
+    #st = ord(st)
+    if not isData:
+        binary = bin(st)[2:].zfill(32)
+    elif isData:
+        ia = st.encode()
+        ba = int.from_bytes(ia, "big")
+        binary = bin(ba)[2:].zfill(8)
+    return binary
+
+def make(seq, data):
+    d = otb(data, True)
+    s = otb(seq, False)
+    ret = ""
+    ret= s + d
+    print(s, d, "make ", ret)
+    return ret
 
 if __name__ == "__main__":
     sp = int(argv[1])
