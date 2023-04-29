@@ -54,10 +54,19 @@ def receiver(rp, pp, ws, tt, tv):
     ## test 1 ##
     print("sending to: ", sa)
     print("Test1")
-    hi = "hi. receiver to sender"
-    sock.sendto(hi.encode(), sa)
-    print("shutting down receiver")
-    time.sleep(5)
+    hi = b"hi. receiver to sender"
+    sock.sendto(hi, sa)
+    ## test 1 done ##
+
+    ## test 2 ##
+    while True:
+        s, a = sock.recvfrom(1024)
+        print(s)
+        print(s.decode())
+        break
+    print("shutting down receiver...")
+    time.sleep(3)
+    ## test 2 done ##
 
 if __name__ == "__main__":
     sp = int(argv[1])

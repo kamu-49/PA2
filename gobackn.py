@@ -32,13 +32,19 @@ def sender(sp, pp, ws, tt, tv):
     print("test1")
     while True:
         hold, addr = sock.recvfrom(1024)
+        print(hold)
         h = hold.decode()
         print(h)
         break
+    ## test 1 done ##
 
-    print("shutting down sender")
-    time.sleep(5)
-    ## test 1 ##
+    ## test 2 ##
+    msg = input("sender> ")
+    mmsg = "the message received was: " + msg
+    sock.sendto(mmsg.encode(), ra)
+    print("shutting down sender...")
+    time.sleep(3)
+    ## test 2 ##
 
 def receiver(rp, pp, ws, tt, tv):
     print("hello. in receiver")
@@ -54,10 +60,19 @@ def receiver(rp, pp, ws, tt, tv):
     ## test 1 ##
     print("sending to: ", sa)
     print("Test1")
-    hi = "hi. receiver to sender"
-    sock.sendto(hi.encode(), sa)
-    print("shutting down receiver")
-    time.sleep(5)
+    hi = b"hi. receiver to sender"
+    sock.sendto(hi, sa)
+    ## test 1 done ##
+
+     ## test 2 ##
+    while True:
+        s, a = sock.recvfrom(1024)
+        print(s)
+        print(s.decode())
+        break
+    print("shutting down receiver...")
+    time.sleep(3)
+    ## test 2 done ##
 
 if __name__ == "__main__":
     sp = int(argv[1])
