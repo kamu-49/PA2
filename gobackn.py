@@ -12,11 +12,11 @@ data_packet = []
 data_packet_size = len(data_packet)+len(sequence_number)
 timeout = 0.5
 holder = 0
+max_seq = 2**32
 
 
 ##### SENDER #####
 def sender(sp, pp, ws, tt, tv):
-    print("hello. inside sender")
     ### Declarations
     seq_index = 0
 
@@ -27,45 +27,29 @@ def sender(sp, pp, ws, tt, tv):
     sock.bind(sa)
     buffer = [None] * ws
 
-    ## test 1 ##
-    print("current address: ", sa)
-    print("test1")
     while True:
         hold, addr = sock.recvfrom(1024)
         print(hold)
         h = hold.decode()
         print(h)
         break
-    ## test 1 done ##
-
-    ## test 2 ##
+  
     msg = input("sender> ")
     mmsg = "the message received was: " + msg
     sock.sendto(mmsg.encode(), ra)
-    ## test 2  done ##
-
-    ## test 3 ##
     test3 = []
     for i in msg:
         test3.append(i)
     t3h = 0
     while t3h < len(test3):
-        sock.sendto(test3[t3h].encode(), ra)
-        t3h += 1
-        if t3h == len(test3):
-            nah = b"finished"
-            sock.sendto(nah, ra)
-            break
-    ## test 3 done ##
-
-    ## test 4 ##
-    for i in range(len(msg)):
-        seq_index += 1
-        print("seq index: ", seq_index, otb(seq_index, False))
-        m = make(seq_index, msg[i])
-        print(m)
-        sock.sendto(m.encode(), ra)
-        time.sleep(0.15)
+        while None in buffer:
+            seq_index += 1
+            if seq_index > max_seq:
+                seq_index = 1
+            m = make(seq_index, msg[i])
+            print(m)
+            sock.sendto(m.encode(), ra)
+            time.sleep(0.15)
     nah = b"finito"
     sock.sendto(nah, ra)
     ## test 4 done ##
