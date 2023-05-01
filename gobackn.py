@@ -5,7 +5,7 @@ import signal
 import random
 
 ##### DECLARATIONS #####
-byte = 8
+byte = 9
 letter = [byte]
 sequence_number = [32]
 data_packet = []
@@ -26,12 +26,16 @@ def sender(sp, pp, ws, tt, tv):
     sock.bind(sa)
     buffer_len = ws
     buffer = []
-    det_num = 1
-    canTime = False # if can set timeout clock
-    cando = True #if we are in timeout mode
+    ddrop = 0
+
+    start_timeout = True # if can set timeout clock
+    in_timeout = False #if we are in timeout mode
+    timeout = time.time()
+    max_timeout = time.time()
 
     total = 0
     dead = 0
+
     while True:
         hold, addr = sock.recvfrom(1024)
         h = hold.decode()
@@ -43,15 +47,21 @@ def sender(sp, pp, ws, tt, tv):
     for i in msg:
         message.append(i)
     
+
+
+
     window_ind = 0
     msg_ind = 0
-    while msg_ind < len(message):
-        print("cando staatus: ", cando)
-        timeout = 0.0
-        buff_ind = 0
+    #sock.settimeout(0.1)
+    while msg_ind < len(message): #while still message left
+        anyInput = True
+        isDisc_p = False
+        isDisc_d = False
+        
         diff = len(message) - msg_ind #how many more chars left in the message
         new_ws = min(buffer_len, diff)
-        while len(buffer) < new_ws and cando is True:
+
+        while (len(buffer) < new_ws) and (in_timeout is False):
             seq_index += 1
             if seq_index > max_seq:
                 seq_index = 1
@@ -59,53 +69,122 @@ def sender(sp, pp, ws, tt, tv):
             buffer.append(m)
             msg_ind += 1
             sock.sendto(m.encode(), ra)
-            print("packet%d %s sent "%(seq_index-1, msg[msg_ind-1]))
-            if canTime:
+            print("[",time.time(),"] packet%d %s sent "%(seq_index-1, msg[msg_ind-1]))
+            if start_timeout:
                 timeout = time.time()
-        
-        #the buffer is full. wait for a recv
-        a, b = sock.recvfrom(1024)
-        canTime = True
-        seq = a.decode()
-        seq_num = bto(seq, False)
-        if (seq_num-1) < (window_ind % max_seq):
-            print("ACK%d received. window does not move and stays at %d"%(seq_num-1, window_ind))
-            canTime = True
-            timeout = time.time()
-        else:
-            for i in range(len(buffer)):
-                word = buffer[i]
-                i_num = bto(word[0:32], False)
-                if i_num <= seq_num:
-                    throwaway = buffer.pop(i)
-                    window_ind += 1
-                    total += 1
-                    if i_num == seq_num:
-                        print("ACK%d received, window moves to %d"%(seq_num-1, window_ind))
-                        canTime = True
-                        break
-        print("cantime stat: ", canTime)
-        if canTime:
-            timeout = time.time()
-            print("quick test: ", time.time())
-            canTime = False
+                start_timeout = False
+        #while loop will not run if the buffer is full
         
 
-        if time.time() - timeout > 0.5:
-            print("nah we timing out boi")
-            finished_timeout = time.time()
-            cando = False
-            timeout = 0.0
-        
-        if cando is False:
-            if time.time() - finished_timeout >= 1:
-                cando = True
+        if in_timeout:
+            remaining_timeout_time = 0.5-(time.time()-max_timeout)
+            if remaining_timeout_time > 0:
+                sock.settimeout(remaining_timeout_time)
+                try:
+                    a, b = sock.recvfrom(1024)
+                    start_timeout = True
+                except:
+                    time.sleep(remaining_timeout_time)
+
+                    in_timeout = False
+                    for header in buffer:
+                        sock.sendto(header.encode(), ra)
+                        seq = header[0:32]
+                        packet = header[32:40]
+                        fs = bto(seq, False)
+                        fd = bto(packet, True)
+                        if start_timeout:
+                            timeout = time.time()
+                            start_timeout = False
+                    continue
+            elif remaining_timeout_time <= 0:
+                try:
+                    a, b = sock.recvfrom(1024)
+                    start_timeout = True
+                except:
+                    in_timeout = False
+                    for header in buffer:
+                        sock.sendto(header.encode(), ra)
+                        seq = header[0:32]
+                        packet = header[32:40]
+                        fs = bto(seq, False)
+                        fd = bto(packet, True)
+                        print("[",time.time(),"] packet%d %s sent "%(fs-1, fd))
+                        if start_timeout:
+                            timeout = time.time()
+                            start_timeout = False
+                    continue
+        elif not start_timeout:
+            remaining_timeout_time = 0.5-(time.time()-timeout)
+            if remaining_timeout_time > 0:
+                sock.settimeout(remaining_timeout_time)
+                try:
+                    a, b = sock.recvfrom(1024)
+                    start_timeout = True
+                except:
+                    start_timeout = False
+                    in_timeout = True
+                    anyInput = False
+                    continue
+            elif remaining_timeout_time <= 0:
+                start_timeout = False
+                in_timeout = True
+                anyInput = False
+                continue
+    
+        seq = a.decode()
+        seq_num = bto(seq, False)
+        ddrop += 1
+        p_prob = float(random.randint(0,100)/100)
+        cont = True
+
+        if ddrop >= tv and tt == "-d":
+            isDisc_d = True
+            ddrop = 0
+        if p_prob <= tv and tt == "-p":
+            isDisc_p = True
+    
+        if isDisc_p or isDisc_d:
+            print("[",time.time(),"] ACK%d discarded"%(seq_num-1))
+            dead += 1
+            start_timeout = False
+            isDisc_p = False
+            isDisc_d = False
+        else:
+            if anyInput:
+                if (seq_num-1) < (window_ind % max_seq):
+                    print("[",time.time(),"] ACK%d received. window does not move and stays at %d"%(seq_num-1, window_ind))
+                    start_timeout = True
+                    timeout = time.time()
+                else:
+                    for i in range(len(buffer)):
+                        word = buffer[i]
+                        i_num = bto(word[0:32], False)
+                        if i_num <= seq_num:
+                            window_ind += 1
+                            total += 1
+                            if i_num == seq_num:
+                                print("[",time.time(),"] ACK%d received, window moves to %d"%(seq_num-1, window_ind))
+                                start_timeout = True
+                                break
+                    for j,k in reversed(list(enumerate(buffer))):
+                            k_num = bto(k[0:32], False)
+                            if k_num <= i_num:
+                                throwaway = buffer.pop(j)
+
+        if start_timeout and not in_timeout:
+            timeout = time.time()
+            start_timeout = False
+
+        if not start_timeout:
+            if time.time() - timeout > 0.5:
+                max_timeout = time.time()
+                in_timeout = True
                 timeout = time.time()
-                
 
     nah = b"finito"
     sock.sendto(nah, ra)
-    print("[Summary] %d/%d packets discarded, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
+    print("[",time.time(),"] [Summary] %d/%d packets discarded, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
     
 
 def receiver(rp, pp, ws, tt, tv):
@@ -123,12 +202,24 @@ def receiver(rp, pp, ws, tt, tv):
     
     dead = 0
     total = 0
+    ddrop = 0
     exp_pkg = 1
     while True:
+        isDisc_p = False
+        isDisc_d = False
         a, b = sock.recvfrom(1024)
-        total += 1
+        ddrop += 1
+        disc_seq = None
+
+        p_prob = float(random.randint(0,100)/100)
+        if ddrop >= tv and tt == "-d":
+            isDisc_d = True
+            ddrop = 0
+        if p_prob <= tv and tt == "-p":
+            isDisc_p = True
+
         if(a.decode() == "finito"):
-            print("[Summary] %d/%d packets dropped, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
+            print("[",time.time(),"] [Summary] %d/%d packets dropped, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
             break
         else:
             decoded = a.decode()
@@ -137,11 +228,25 @@ def receiver(rp, pp, ws, tt, tv):
             
             fs = bto(seq, False)
             fd = bto(packet, True)
-            print("packet %d %s received"%(fs-1, fd))
-            # ADD PROBABILITY HERE
-            #dead += 1
-            sock.sendto(seq.encode(), sa)
-            print("ACK%d sent, expecting packet%d"%(fs-1,fs))
+
+            if disc_seq == None:
+                if isDisc_p or isDisc_d:
+                    print("[",time.time(),"] packet %d %s discarded"%(fs-1, fd))
+                    disc_seq = fs
+                    dead += 1
+                else:
+                    print("[",time.time(),"] packet %d %s received"%(fs-1, fd))
+
+                    sock.sendto(seq.encode(), sa)
+                    print("[",time.time(),"] ACK%d sent, expecting packet%d"%(fs-1,fs))
+                    total += 1
+            else:
+                if fs == disc_seq:
+                    sock.sendto(seq.encode(), sa)
+                    print("[",time.time(),"] ACK%d sent, expecting packet%d"%(fs-1,fs))
+                    disc_seq = None
+                    total += 1
+
 
 
 def bto(bi, isData): #bts
