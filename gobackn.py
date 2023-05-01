@@ -37,20 +37,41 @@ def sender(sp, pp, ws, tt, tv):
             break
 
     msg = input("sender> ")
-    test3 = []
+    message = []
     for i in msg:
-        test3.append(i)
-    t3h = 0
-    while t3h < len(test3):
-        bi = 0
-        while len(buffer) < buffer_len:
+        message.append(i)
+    
+    window_ind = 0
+    msg_ind = 0
+    while msg_ind < len(message):
+        buff_ind = 0
+        diff = len(message) - msg_ind #how many more chars left in the message
+        new_ws = min(buffer_len, diff)
+
+        while len(buffer) < new_ws:
             seq_index += 1
             if seq_index > max_seq-1:
                 seq_index = 1
-            m = make(seq_index, msg[i])
+            m = make(seq_index, msg[msg_ind])
             buffer.append(m)
+            msg_ind += 1
             sock.sendto(m.encode(), ra)
-            time.sleep(0.02)
+        
+        #the buffer is full. wait for a recv
+        a, b = sock.recvfrom(1024)
+        seq = a.decode()
+        for ew in range(len(buffer)):
+            word = buffer[ew]
+            i_num = bto(word[0:32], False)
+            seq_num = bto(seq, False)
+            if i_num <= seq_num:
+                throwaway = buffer.pop(ew)
+                window_ind += 1
+                total += 1
+                if i_num == seq_num:
+                    print("ACK%d received, window movves to %d"%(seq_num-1, window_ind))
+                    break
+
     nah = b"finito"
     sock.sendto(nah, ra)
     print("[Summary] %d/%d packets discarded, loss rate = %f%%"%(dead, total, float((dead/total)*100)))
@@ -66,9 +87,6 @@ def receiver(rp, pp, ws, tt, tv):
     sock.bind(ra)
     buffer = [None] * 1
 
-    ## test 1 ##
-    print("sending to: ", sa)
-    print("Test1")
     hi = b"alive"
     sock.sendto(hi, sa)
     
@@ -91,12 +109,11 @@ def receiver(rp, pp, ws, tt, tv):
             print("packet %d %s received"%(fs-1, fd))
             # ADD PROBABILITY HERE
             #dead += 1
-            sock.sendto(seq.encoded(), sa)
+            sock.sendto(seq.encode(), sa)
             print("ACK%d sent, expecting packet%d"%(fs-1,fs))
 
 
 def bto(bi, isData): #bts
-    print("this is so frustrating: ", type(bi), bi)
     if not isData:
         returner = int(bi, 2)
     elif isData:
@@ -122,6 +139,20 @@ def make(seq, data):
     ret= s + d
     return ret
 
+def decoder(encoded, isACK):
+    decoded = encoded.decode()
+    seq = decoded[0:32]
+
+    if isACK:
+        fs = bto(seq, False)
+        fd = 0
+    else:
+        packet = decoded[32:40]
+        fs = bto(seq,False)
+        fd = bto(packet, True)
+    
+    return fs, fd
+
 if __name__ == "__main__":
     sp = int(argv[1])
     pp = int(argv[2])
@@ -133,12 +164,9 @@ if __name__ == "__main__":
     s = socket(AF_INET, SOCK_DGRAM)
     time.sleep(0.5)
     try:
-        print("attempting bind...")
         s.bind(('localhost',mp))
-        print("no sender yet")
         sender(sp,pp,ws,pt,pn)
     except OSError as e:
-        print("sender already alive")
         s.close()
-        time.sleep(5)
+        time.sleep(0.5)
         receiver(sp,pp,ws,pt,pn)
