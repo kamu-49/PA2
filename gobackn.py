@@ -10,7 +10,6 @@ letter = [byte]
 sequence_number = [32]
 data_packet = []
 data_packet_size = len(data_packet)+len(sequence_number)
-timeout = 0.5
 holder = 0
 max_seq = 2**32
 
@@ -27,6 +26,9 @@ def sender(sp, pp, ws, tt, tv):
     sock.bind(sa)
     buffer_len = ws
     buffer = []
+    det_num = 1
+    canTime = False # if can set timeout clock
+    cando = True #if we are in timeout mode
 
     total = 0
     dead = 0
@@ -44,33 +46,62 @@ def sender(sp, pp, ws, tt, tv):
     window_ind = 0
     msg_ind = 0
     while msg_ind < len(message):
+        print("cando staatus: ", cando)
+        timeout = 0.0
         buff_ind = 0
         diff = len(message) - msg_ind #how many more chars left in the message
         new_ws = min(buffer_len, diff)
-
-        while len(buffer) < new_ws:
+        while len(buffer) < new_ws and cando is True:
             seq_index += 1
-            if seq_index > max_seq-1:
+            if seq_index > max_seq:
                 seq_index = 1
             m = make(seq_index, msg[msg_ind])
             buffer.append(m)
             msg_ind += 1
             sock.sendto(m.encode(), ra)
+            print("packet%d %s sent "%(seq_index-1, msg[msg_ind-1]))
+            if canTime:
+                timeout = time.time()
         
         #the buffer is full. wait for a recv
         a, b = sock.recvfrom(1024)
+        canTime = True
         seq = a.decode()
-        for ew in range(len(buffer)):
-            word = buffer[ew]
-            i_num = bto(word[0:32], False)
-            seq_num = bto(seq, False)
-            if i_num <= seq_num:
-                throwaway = buffer.pop(ew)
-                window_ind += 1
-                total += 1
-                if i_num == seq_num:
-                    print("ACK%d received, window movves to %d"%(seq_num-1, window_ind))
-                    break
+        seq_num = bto(seq, False)
+        if (seq_num-1) < (window_ind % max_seq):
+            print("ACK%d received. window does not move and stays at %d"%(seq_num-1, window_ind))
+            canTime = True
+            timeout = time.time()
+        else:
+            for i in range(len(buffer)):
+                word = buffer[i]
+                i_num = bto(word[0:32], False)
+                if i_num <= seq_num:
+                    throwaway = buffer.pop(i)
+                    window_ind += 1
+                    total += 1
+                    if i_num == seq_num:
+                        print("ACK%d received, window moves to %d"%(seq_num-1, window_ind))
+                        canTime = True
+                        break
+        print("cantime stat: ", canTime)
+        if canTime:
+            timeout = time.time()
+            print("quick test: ", time.time())
+            canTime = False
+        
+
+        if time.time() - timeout > 0.5:
+            print("nah we timing out boi")
+            finished_timeout = time.time()
+            cando = False
+            timeout = 0.0
+        
+        if cando is False:
+            if time.time() - finished_timeout >= 1:
+                cando = True
+                timeout = time.time()
+                
 
     nah = b"finito"
     sock.sendto(nah, ra)

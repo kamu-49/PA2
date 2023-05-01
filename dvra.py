@@ -160,3 +160,6 @@ def psf(port_len, D): #port splitter function. just making this to make it easie
         part = int(D[i:i+port_len])
         split_ports.append(part)
     return split_ports
+
+if __name__ == "__main__":
+    main()
